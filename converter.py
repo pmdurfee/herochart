@@ -40,13 +40,22 @@ def musicxml_to_chart(input_file, output_file):
     # Get notes from first part
     notes = score.flatten().notes
     resolution = 192
-
+    
+    last_tick = -999
+    min_gap = 64  # Space out notes more
+    
     for note in notes:
         tick = int(note.offset * resolution)
-        sustain = int(note.quarterLength * resolution)
+        
+        # Skip notes too close together
+        if tick - last_tick < min_gap:
+            continue
+        
+        last_tick = tick
+        sustain = min(int(note.quarterLength * resolution), 288)  # Cap sustain
         
         try:
-            # Handle chords
+            # Handle chords - keep all notes
             if note.isChord:
                 for pitch in note.pitches:
                     button = pitch.midi % 5
@@ -55,7 +64,6 @@ def musicxml_to_chart(input_file, output_file):
                 button = note.pitch.midi % 5
                 chart += f"  {tick} = N {button} {sustain}\n"
         except:
-            # Skip percussion or invalid notes
             continue
     
     chart += "}\n"
@@ -67,4 +75,4 @@ def musicxml_to_chart(input_file, output_file):
     print(f"Created {output_file}!")
 
 if __name__ == "__main__":
-    musicxml_to_chart("Queen - Bohemian Rhapsody.mid", "notes.chart")
+    musicxml_to_chart("Cavetown Juliet.mid", "notes.chart")
